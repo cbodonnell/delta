@@ -1,6 +1,6 @@
 package player
 
-//syncgen:entity
+// syncgen:entity
 type Player struct {
 	ID   int64
 	Name string

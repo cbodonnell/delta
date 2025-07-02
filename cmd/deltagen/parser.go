@@ -55,7 +55,7 @@ func Parse(dir string) ([]StructInfo, error) {
 				}
 				found := false
 				for _, c := range gen.Doc.List {
-					if c.Text == "//syncgen:entity" {
+					if c.Text == "// syncgen:entity" || c.Text == "//syncgen:entity" {
 						found = true
 						break
 					}

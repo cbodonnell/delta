@@ -2,6 +2,7 @@ package delta
 
 type FieldType uint8
 
+// TODO: add support for type-based serialization
 const (
 	TypeInvalid FieldType = iota
 	TypeBool    FieldType = 1
