@@ -1,14 +1,6 @@
 package example
 
 // syncgen:entity
-type SimplePlayer struct {
-	ID   int64
-	Name string
-	X, Y float64
-	HP   int
-}
-
-// syncgen:entity
 type GameState struct {
 	// Integer types
 	ID    int64
@@ -21,7 +13,7 @@ type GameState struct {
 	X, Y  float64
 	Speed float32
 
-	// String and character types
+	// String
 	PlayerName string
 
 	// Boolean
