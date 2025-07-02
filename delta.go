@@ -1,5 +1,9 @@
 package delta
 
+import (
+	"io"
+)
+
 type Entity interface {
 	GetID() int64
 	Clone() Entity
@@ -9,4 +13,6 @@ type Entity interface {
 
 type Delta interface {
 	ApplyTo(e Entity)
+	Serialize(w io.Writer) error
+	Deserialize(r io.Reader) error
 }

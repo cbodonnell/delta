@@ -58,7 +58,7 @@ func Parse(dir string) ([]StructInfo, error) {
 					continue
 				}
 
-				// Check for syncgen:entity comment
+				// Check for delta:entity comment
 				if !hasEntityComment(gen.Doc) {
 					continue
 				}
@@ -111,7 +111,7 @@ func Parse(dir string) ([]StructInfo, error) {
 	return structs, err
 }
 
-// hasEntityComment checks if the comment block contains syncgen:entity directive
+// hasEntityComment checks if the comment block contains delta:entity directive
 func hasEntityComment(doc *ast.CommentGroup) bool {
 	if doc == nil {
 		return false
@@ -119,7 +119,7 @@ func hasEntityComment(doc *ast.CommentGroup) bool {
 
 	for _, comment := range doc.List {
 		text := strings.TrimSpace(comment.Text)
-		if text == "// syncgen:entity" || text == "//syncgen:entity" {
+		if text == "// delta:entity" || text == "//delta:entity" {
 			return true
 		}
 	}

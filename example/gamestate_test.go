@@ -1,6 +1,7 @@
 package example
 
 import (
+	"bytes"
 	"reflect"
 	"testing"
 )
@@ -31,11 +32,11 @@ func TestGameState_RoundTrip(t *testing.T) {
 		Data:      []byte{0xAA, 0xBB, 0xCC},
 
 		// Map types
-		PlayerScores: map[string]int{
+		PlayerScores: map[string]int16{
 			"alice": 100,
 			"bob":   200,
 		},
-		ItemCounts: map[int]int{
+		ItemCounts: map[int8]int32{
 			1: 5,
 			2: 3,
 		},
@@ -116,5 +117,60 @@ func TestGameState_RoundTrip(t *testing.T) {
 	// Test delta with nil other
 	if nilDelta := original.Delta(nil); nilDelta != nil {
 		t.Errorf("Delta(nil) should return nil")
+	}
+}
+
+func TestGameStateDelta_SerializeDeserialize(t *testing.T) {
+	// Create two game states with some differences
+	original := &GameState{
+		ID:         1,
+		Round:      5,
+		Score:      100,
+		X:          10.5,
+		Y:          20.5,
+		PlayerName: "TestPlayer",
+		IsActive:   true,
+		Inventory:  []string{"sword", "potion"},
+		PlayerScores: map[string]int16{
+			"alice": 150,
+			"bob":   200,
+		},
+	}
+
+	modified := &GameState{
+		ID:         1,
+		Round:      3,                 // different
+		Score:      50,                // different
+		X:          5.0,               // different
+		Y:          20.5,              // same
+		PlayerName: "DifferentPlayer", // different
+		IsActive:   true,              // same
+		Inventory:  []string{"bow"},   // different
+		PlayerScores: map[string]int16{
+			"alice":   100, // different value
+			"charlie": 75,  // new key
+		},
+	}
+
+	// Create delta from original to modified
+	delta := original.Delta(modified).(*GameStateDelta)
+
+	// Serialize the delta
+	var buf bytes.Buffer
+	err := delta.Serialize(&buf)
+	if err != nil {
+		t.Fatalf("Failed to serialize delta: %v", err)
+	}
+
+	// Deserialize into a new delta
+	newDelta := &GameStateDelta{}
+	err = newDelta.Deserialize(&buf)
+	if err != nil {
+		t.Fatalf("Failed to deserialize delta: %v", err)
+	}
+
+	// Check that the new delta matches the original
+	if !reflect.DeepEqual(newDelta, delta) {
+		t.Errorf("Deserialized delta does not match original:\nOriginal: %+v\nDeserialized: %+v", delta, newDelta)
 	}
 }

@@ -2,6 +2,7 @@
 package example
 
 import (
+	"io"
 	"github.com/cbodonnell/delta"
 )
 
@@ -30,13 +31,13 @@ func (e *GameState) Clone() delta.Entity {
 		copy(cp.Data, e.Data)
 	}
 	if e.PlayerScores != nil {
-		cp.PlayerScores = make(map[string]int)
+		cp.PlayerScores = make(map[string]int16)
 		for k, v := range e.PlayerScores {
 			cp.PlayerScores[k] = v
 		}
 	}
 	if e.ItemCounts != nil {
-		cp.ItemCounts = make(map[int]int)
+		cp.ItemCounts = make(map[int8]int32)
 		for k, v := range e.ItemCounts {
 			cp.ItemCounts[k] = v
 		}
@@ -137,25 +138,25 @@ func (e *GameState) Delta(o delta.Entity) delta.Delta {
 	}
 	if !delta.MapsEqual(e.PlayerScores, other.PlayerScores) {
 		if e.PlayerScores != nil {
-			v := make(map[string]int)
+			v := make(map[string]int16)
 			for k, val := range e.PlayerScores {
 				v[k] = val
 			}
 			d.PlayerScores = &v
 		} else {
-			v := make(map[string]int)
+			v := make(map[string]int16)
 			d.PlayerScores = &v
 		}
 	}
 	if !delta.MapsEqual(e.ItemCounts, other.ItemCounts) {
 		if e.ItemCounts != nil {
-			v := make(map[int]int)
+			v := make(map[int8]int32)
 			for k, val := range e.ItemCounts {
 				v[k] = val
 			}
 			d.ItemCounts = &v
 		} else {
-			v := make(map[int]int)
+			v := make(map[int8]int32)
 			d.ItemCounts = &v
 		}
 	}
@@ -189,8 +190,8 @@ var _ delta.Delta = (*GameStateDelta)(nil)
 
 type GameStateDelta struct {
 	ID *int64
-	Round *int32
-	Score *int
+	Round *int16
+	Score *int32
 	Lives *int8
 	MaxHP *uint16
 	X *float64
@@ -202,8 +203,8 @@ type GameStateDelta struct {
 	Positions *[]float64
 	PlayerIDs *[]int64
 	Data *[]byte
-	PlayerScores *map[string]int
-	ItemCounts *map[int]int
+	PlayerScores *map[string]int16
+	ItemCounts *map[int8]int32
 	Metadata *map[string]string
 }
 
@@ -276,7 +277,7 @@ func (d *GameStateDelta) ApplyTo(e delta.Entity) {
 	}
 	if d.PlayerScores != nil {
 		if *d.PlayerScores != nil {
-			et.PlayerScores = make(map[string]int)
+			et.PlayerScores = make(map[string]int16)
 			for k, v := range *d.PlayerScores {
 				et.PlayerScores[k] = v
 			}
@@ -286,7 +287,7 @@ func (d *GameStateDelta) ApplyTo(e delta.Entity) {
 	}
 	if d.ItemCounts != nil {
 		if *d.ItemCounts != nil {
-			et.ItemCounts = make(map[int]int)
+			et.ItemCounts = make(map[int8]int32)
 			for k, v := range *d.ItemCounts {
 				et.ItemCounts[k] = v
 			}
@@ -304,4 +305,433 @@ func (d *GameStateDelta) ApplyTo(e delta.Entity) {
 			et.Metadata = nil
 		}
 	}
+}
+
+func (d *GameStateDelta) Serialize(w io.Writer) error {
+	bw := delta.NewBinaryWriter(w)
+	
+	// Write field presence bitmask
+	var fieldMask uint64
+	if d.ID != nil {
+		fieldMask |= 1 << 0
+	}
+	if d.Round != nil {
+		fieldMask |= 1 << 1
+	}
+	if d.Score != nil {
+		fieldMask |= 1 << 2
+	}
+	if d.Lives != nil {
+		fieldMask |= 1 << 3
+	}
+	if d.MaxHP != nil {
+		fieldMask |= 1 << 4
+	}
+	if d.X != nil {
+		fieldMask |= 1 << 5
+	}
+	if d.Y != nil {
+		fieldMask |= 1 << 6
+	}
+	if d.Speed != nil {
+		fieldMask |= 1 << 7
+	}
+	if d.PlayerName != nil {
+		fieldMask |= 1 << 8
+	}
+	if d.IsActive != nil {
+		fieldMask |= 1 << 9
+	}
+	if d.Inventory != nil {
+		fieldMask |= 1 << 10
+	}
+	if d.Positions != nil {
+		fieldMask |= 1 << 11
+	}
+	if d.PlayerIDs != nil {
+		fieldMask |= 1 << 12
+	}
+	if d.Data != nil {
+		fieldMask |= 1 << 13
+	}
+	if d.PlayerScores != nil {
+		fieldMask |= 1 << 14
+	}
+	if d.ItemCounts != nil {
+		fieldMask |= 1 << 15
+	}
+	if d.Metadata != nil {
+		fieldMask |= 1 << 16
+	}
+	if err := bw.WriteUint64(fieldMask); err != nil {
+		return err
+	}
+
+	// Write field values for present fields
+	if d.ID != nil {
+		// Serialize primitive
+		if err := bw.WriteInt64(*d.ID); err != nil {
+			return err
+		}
+	}
+	if d.Round != nil {
+		// Serialize primitive
+		if err := bw.WriteInt16(*d.Round); err != nil {
+			return err
+		}
+	}
+	if d.Score != nil {
+		// Serialize primitive
+		if err := bw.WriteInt32(*d.Score); err != nil {
+			return err
+		}
+	}
+	if d.Lives != nil {
+		// Serialize primitive
+		if err := bw.WriteInt8(*d.Lives); err != nil {
+			return err
+		}
+	}
+	if d.MaxHP != nil {
+		// Serialize primitive
+		if err := bw.WriteUint16(*d.MaxHP); err != nil {
+			return err
+		}
+	}
+	if d.X != nil {
+		// Serialize primitive
+		if err := bw.WriteFloat64(*d.X); err != nil {
+			return err
+		}
+	}
+	if d.Y != nil {
+		// Serialize primitive
+		if err := bw.WriteFloat64(*d.Y); err != nil {
+			return err
+		}
+	}
+	if d.Speed != nil {
+		// Serialize primitive
+		if err := bw.WriteFloat32(*d.Speed); err != nil {
+			return err
+		}
+	}
+	if d.PlayerName != nil {
+		// Serialize primitive
+		if err := bw.WriteString(*d.PlayerName); err != nil {
+			return err
+		}
+	}
+	if d.IsActive != nil {
+		// Serialize primitive
+		if err := bw.WriteBool(*d.IsActive); err != nil {
+			return err
+		}
+	}
+	if d.Inventory != nil {
+		// Serialize slice
+		if err := bw.WriteVarUint32(uint32(len(*d.Inventory))); err != nil {
+			return err
+		}
+		for _, item := range *d.Inventory {
+			if err := bw.WriteString(item); err != nil {
+				return err
+			}
+		}
+	}
+	if d.Positions != nil {
+		// Serialize slice
+		if err := bw.WriteVarUint32(uint32(len(*d.Positions))); err != nil {
+			return err
+		}
+		for _, item := range *d.Positions {
+			if err := bw.WriteFloat64(item); err != nil {
+				return err
+			}
+		}
+	}
+	if d.PlayerIDs != nil {
+		// Serialize slice
+		if err := bw.WriteVarUint32(uint32(len(*d.PlayerIDs))); err != nil {
+			return err
+		}
+		for _, item := range *d.PlayerIDs {
+			if err := bw.WriteInt64(item); err != nil {
+				return err
+			}
+		}
+	}
+	if d.Data != nil {
+		// Serialize slice
+		if err := bw.WriteVarUint32(uint32(len(*d.Data))); err != nil {
+			return err
+		}
+		for _, item := range *d.Data {
+			if err := bw.WriteUint8(item); err != nil {
+				return err
+			}
+		}
+	}
+	if d.PlayerScores != nil {
+		// Serialize map
+		if err := bw.WriteVarUint32(uint32(len(*d.PlayerScores))); err != nil {
+			return err
+		}
+		for k, v := range *d.PlayerScores {
+			if err := bw.WriteString(k); err != nil {
+				return err
+			}
+			if err := bw.WriteInt16(v); err != nil {
+				return err
+			}
+		}
+	}
+	if d.ItemCounts != nil {
+		// Serialize map
+		if err := bw.WriteVarUint32(uint32(len(*d.ItemCounts))); err != nil {
+			return err
+		}
+		for k, v := range *d.ItemCounts {
+			if err := bw.WriteInt8(k); err != nil {
+				return err
+			}
+			if err := bw.WriteInt32(v); err != nil {
+				return err
+			}
+		}
+	}
+	if d.Metadata != nil {
+		// Serialize map
+		if err := bw.WriteVarUint32(uint32(len(*d.Metadata))); err != nil {
+			return err
+		}
+		for k, v := range *d.Metadata {
+			if err := bw.WriteString(k); err != nil {
+				return err
+			}
+			if err := bw.WriteString(v); err != nil {
+				return err
+			}
+		}
+	}
+	
+	return nil
+}
+
+func (d *GameStateDelta) Deserialize(r io.Reader) error {
+	br := delta.NewBinaryReader(r)
+	
+	// Read field presence bitmask
+	fieldMask, err := br.ReadUint64()
+	if err != nil {
+		return err
+	}
+
+	// Read field values for present fields
+	if fieldMask & (1 << 0) != 0 {
+		// Deserialize primitive
+		val, err := br.ReadInt64()
+		if err != nil {
+			return err
+		}
+		d.ID = &val
+	}
+	if fieldMask & (1 << 1) != 0 {
+		// Deserialize primitive
+		val, err := br.ReadInt16()
+		if err != nil {
+			return err
+		}
+		d.Round = &val
+	}
+	if fieldMask & (1 << 2) != 0 {
+		// Deserialize primitive
+		val, err := br.ReadInt32()
+		if err != nil {
+			return err
+		}
+		d.Score = &val
+	}
+	if fieldMask & (1 << 3) != 0 {
+		// Deserialize primitive
+		val, err := br.ReadInt8()
+		if err != nil {
+			return err
+		}
+		d.Lives = &val
+	}
+	if fieldMask & (1 << 4) != 0 {
+		// Deserialize primitive
+		val, err := br.ReadUint16()
+		if err != nil {
+			return err
+		}
+		d.MaxHP = &val
+	}
+	if fieldMask & (1 << 5) != 0 {
+		// Deserialize primitive
+		val, err := br.ReadFloat64()
+		if err != nil {
+			return err
+		}
+		d.X = &val
+	}
+	if fieldMask & (1 << 6) != 0 {
+		// Deserialize primitive
+		val, err := br.ReadFloat64()
+		if err != nil {
+			return err
+		}
+		d.Y = &val
+	}
+	if fieldMask & (1 << 7) != 0 {
+		// Deserialize primitive
+		val, err := br.ReadFloat32()
+		if err != nil {
+			return err
+		}
+		d.Speed = &val
+	}
+	if fieldMask & (1 << 8) != 0 {
+		// Deserialize primitive
+		val, err := br.ReadString()
+		if err != nil {
+			return err
+		}
+		d.PlayerName = &val
+	}
+	if fieldMask & (1 << 9) != 0 {
+		// Deserialize primitive
+		val, err := br.ReadBool()
+		if err != nil {
+			return err
+		}
+		d.IsActive = &val
+	}
+	if fieldMask & (1 << 10) != 0 {
+		// Deserialize slice
+		length, err := br.ReadVarUint32()
+		if err != nil {
+			return err
+		}
+		slice := make([]string, length)
+		for i := range slice {
+			item, err := br.ReadString()
+			if err != nil {
+				return err
+			}
+			slice[i] = item
+		}
+		d.Inventory = &slice
+	}
+	if fieldMask & (1 << 11) != 0 {
+		// Deserialize slice
+		length, err := br.ReadVarUint32()
+		if err != nil {
+			return err
+		}
+		slice := make([]float64, length)
+		for i := range slice {
+			item, err := br.ReadFloat64()
+			if err != nil {
+				return err
+			}
+			slice[i] = item
+		}
+		d.Positions = &slice
+	}
+	if fieldMask & (1 << 12) != 0 {
+		// Deserialize slice
+		length, err := br.ReadVarUint32()
+		if err != nil {
+			return err
+		}
+		slice := make([]int64, length)
+		for i := range slice {
+			item, err := br.ReadInt64()
+			if err != nil {
+				return err
+			}
+			slice[i] = item
+		}
+		d.PlayerIDs = &slice
+	}
+	if fieldMask & (1 << 13) != 0 {
+		// Deserialize slice
+		length, err := br.ReadVarUint32()
+		if err != nil {
+			return err
+		}
+		slice := make([]byte, length)
+		for i := range slice {
+			item, err := br.ReadUint8()
+			if err != nil {
+				return err
+			}
+			slice[i] = item
+		}
+		d.Data = &slice
+	}
+	if fieldMask & (1 << 14) != 0 {
+		// Deserialize map
+		length, err := br.ReadVarUint32()
+		if err != nil {
+			return err
+		}
+		m := make(map[string]int16)
+		for i := uint32(0); i < length; i++ {
+			k, err := br.ReadString()
+			if err != nil {
+				return err
+			}
+			v, err := br.ReadInt16()
+			if err != nil {
+				return err
+			}
+			m[k] = v
+		}
+		d.PlayerScores = &m
+	}
+	if fieldMask & (1 << 15) != 0 {
+		// Deserialize map
+		length, err := br.ReadVarUint32()
+		if err != nil {
+			return err
+		}
+		m := make(map[int8]int32)
+		for i := uint32(0); i < length; i++ {
+			k, err := br.ReadInt8()
+			if err != nil {
+				return err
+			}
+			v, err := br.ReadInt32()
+			if err != nil {
+				return err
+			}
+			m[k] = v
+		}
+		d.ItemCounts = &m
+	}
+	if fieldMask & (1 << 16) != 0 {
+		// Deserialize map
+		length, err := br.ReadVarUint32()
+		if err != nil {
+			return err
+		}
+		m := make(map[string]string)
+		for i := uint32(0); i < length; i++ {
+			k, err := br.ReadString()
+			if err != nil {
+				return err
+			}
+			v, err := br.ReadString()
+			if err != nil {
+				return err
+			}
+			m[k] = v
+		}
+		d.Metadata = &m
+	}
+	
+	return nil
 }

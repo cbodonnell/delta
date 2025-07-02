@@ -1,11 +1,11 @@
 package example
 
-// syncgen:entity
+// delta:entity
 type GameState struct {
 	// Integer types
 	ID    int64
-	Round int32
-	Score int
+	Round int16
+	Score int32
 	Lives int8
 	MaxHP uint16
 
@@ -26,7 +26,7 @@ type GameState struct {
 	Data      []byte
 
 	// Map types
-	PlayerScores map[string]int
-	ItemCounts   map[int]int
+	PlayerScores map[string]int16
+	ItemCounts   map[int8]int32
 	Metadata     map[string]string
 }
