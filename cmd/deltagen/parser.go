@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"go/ast"
 	"go/parser"
 	"go/printer"
@@ -32,6 +33,7 @@ func Parse(dir string) ([]StructInfo, error) {
 		if d.IsDir() || filepath.Ext(path) != ".go" || strings.HasSuffix(path, "_deltagen.go") {
 			return nil
 		}
+
 		node, err := parser.ParseFile(fset, path, nil, parser.ParseComments)
 		if err != nil {
 			return err
@@ -44,23 +46,20 @@ func Parse(dir string) ([]StructInfo, error) {
 			if !ok || gen.Tok != token.TYPE {
 				continue
 			}
+
 			for _, spec := range gen.Specs {
 				ts, ok := spec.(*ast.TypeSpec)
-				st, ok2 := ts.Type.(*ast.StructType)
-				if !ok || !ok2 {
+				if !ok {
 					continue
 				}
-				if gen.Doc == nil {
+
+				st, ok := ts.Type.(*ast.StructType)
+				if !ok {
 					continue
 				}
-				found := false
-				for _, c := range gen.Doc.List {
-					if c.Text == "// syncgen:entity" || c.Text == "//syncgen:entity" {
-						found = true
-						break
-					}
-				}
-				if !found {
+
+				// Check for syncgen:entity comment
+				if !hasEntityComment(gen.Doc) {
 					continue
 				}
 
@@ -68,19 +67,43 @@ func Parse(dir string) ([]StructInfo, error) {
 					Name:        ts.Name.Name,
 					PackageName: packageName,
 				}
+
+				hasID := false
 				for _, f := range st.Fields.List {
-					// Skip anonymous fields
+					// Skip anonymous fields (embedded structs)
 					if len(f.Names) == 0 {
 						continue
 					}
+
+					typeStr := ExprString(f.Type)
+
+					// Handle multiple field names of same type: X, Y float64
 					for _, name := range f.Names {
+						// Skip unexported fields (starting with lowercase)
+						if !isExported(name.Name) {
+							continue
+						}
+
+						// Check for ID field
+						if name.Name == "ID" && typeStr == "int64" {
+							hasID = true
+						}
+
 						s.Fields = append(s.Fields, FieldInfo{
 							Name: name.Name,
-							Type: ExprString(f.Type),
+							Type: typeStr,
 						})
 					}
 				}
-				structs = append(structs, s)
+				// Ensure the struct has an ID field
+				if !hasID {
+					return fmt.Errorf("struct %s in package %s does not have an ID field", s.Name, packageName)
+				}
+
+				// Only add structs that have at least one field
+				if len(s.Fields) > 0 {
+					structs = append(structs, s)
+				}
 			}
 		}
 		return nil
@@ -88,8 +111,32 @@ func Parse(dir string) ([]StructInfo, error) {
 	return structs, err
 }
 
+// hasEntityComment checks if the comment block contains syncgen:entity directive
+func hasEntityComment(doc *ast.CommentGroup) bool {
+	if doc == nil {
+		return false
+	}
+
+	for _, comment := range doc.List {
+		text := strings.TrimSpace(comment.Text)
+		if text == "// syncgen:entity" || text == "//syncgen:entity" {
+			return true
+		}
+	}
+	return false
+}
+
+// isExported returns true if the identifier is exported (starts with uppercase)
+func isExported(name string) bool {
+	return len(name) > 0 && name[0] >= 'A' && name[0] <= 'Z'
+}
+
+// ExprString converts an AST expression to its string representation
 func ExprString(e ast.Expr) string {
 	var buf strings.Builder
-	printer.Fprint(&buf, token.NewFileSet(), e)
+	err := printer.Fprint(&buf, token.NewFileSet(), e)
+	if err != nil {
+		return "unknown" // fallback for unprintable expressions
+	}
 	return buf.String()
 }
